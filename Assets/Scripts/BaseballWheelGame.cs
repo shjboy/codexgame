@@ -7,21 +7,23 @@ public class BaseballWheelGame : MonoBehaviour
     public Text resultText;
     public Text inningText;
     public Text scoreText;
+    public Text outsText;
+    public Text basesText;
     public Button spinButton;
 
     // 十個可能結果的轉盤選項
     private string[] wheelOptions = new string[]
     {
-        "三振",       // 三振
-        "四壞",       // 四壞球
-        "一壘安打", // 一壘安打
-        "二壘安打", // 二壘安打
-        "三壘安打", // 三壘安打
-        "全壘打",   // 全壘打
-        "滾地出局", // 滾地出局
-        "接殺出局", // 接殺出局
-        "觸身球",   // 觸身球
-        "失誤上壘"  // 失誤上壘
+        "三振出局",     // Strikeout
+        "四壞球保送",   // Walk
+        "一壘安打",     // Single
+        "二壘安打",     // Double
+        "三壘安打",     // Triple
+        "全壘打",       // Home run
+        "飛球接殺",     // Fly out
+        "滾地球出局",   // Ground out
+        "犧牲打",       // Sacrifice fly
+        "雙殺打"        // Double play
     };
 
     private bool topInning = true;
@@ -52,14 +54,12 @@ public class BaseballWheelGame : MonoBehaviour
     {
         switch (index)
         {
-            case 0: // 三振
-            case 6: // 滾地出局
-            case 7: // 接殺出局
+            case 0: // 三振出局
+            case 6: // 飛球接殺
+            case 7: // 滾地球出局
                 outs++;
                 break;
-            case 1: // 四壞球
-            case 8: // 觸身球
-            case 9: // 失誤上壘
+            case 1: // 四壞球保送
             case 2: // 一壘安打
                 AdvanceRunners(1);
                 break;
@@ -74,11 +74,19 @@ public class BaseballWheelGame : MonoBehaviour
                 AddRuns(runners + 1);
                 ClearBases();
                 break;
+            case 8: // 犧牲打
+                outs++;
+                AdvanceRunners(1, false);
+                break;
+            case 9: // 雙殺打
+                outs += 2;
+                RemoveLeadRunner();
+                break;
         }
         CheckHalfInning();
     }
 
-    void AdvanceRunners(int basesToAdvance)
+    void AdvanceRunners(int basesToAdvance, bool batterSafe = true)
     {
         for (int b = 2; b >= 0; b--)
         {
@@ -96,7 +104,7 @@ public class BaseballWheelGame : MonoBehaviour
                 bases[b] = false;
             }
         }
-        if (basesToAdvance >= 1)
+        if (batterSafe && basesToAdvance >= 1)
         {
             int newIndex = basesToAdvance - 1;
             if (newIndex >= 3)
@@ -106,6 +114,18 @@ public class BaseballWheelGame : MonoBehaviour
             else
             {
                 bases[newIndex] = true;
+            }
+        }
+    }
+
+    void RemoveLeadRunner()
+    {
+        for (int b = 0; b < 3; b++)
+        {
+            if (bases[b])
+            {
+                bases[b] = false;
+                break;
             }
         }
     }
@@ -120,6 +140,14 @@ public class BaseballWheelGame : MonoBehaviour
     void ClearBases()
     {
         for (int i = 0; i < 3; i++) bases[i] = false;
+    }
+
+    string FormatBases()
+    {
+        string first = bases[0] ? "有人" : "空";
+        string second = bases[1] ? "有人" : "空";
+        string third = bases[2] ? "有人" : "空";
+        return string.Format("一:{0} 二:{1} 三:{2}", first, second, third);
     }
 
     void AddRuns(int r)
@@ -152,5 +180,11 @@ public class BaseballWheelGame : MonoBehaviour
 
         if (scoreText != null)
             scoreText.text = string.Format("攻 {0} - 守 {1}", offenseScore, defenseScore);
+
+        if (outsText != null)
+            outsText.text = string.Format("出局數: {0}", outs);
+
+        if (basesText != null)
+            basesText.text = FormatBases();
     }
 }
